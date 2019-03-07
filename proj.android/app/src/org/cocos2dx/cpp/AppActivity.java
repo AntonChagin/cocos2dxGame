@@ -40,7 +40,7 @@ public class AppActivity extends Cocos2dxActivity {
             //  at the top of the stack (ie: the last state of this task)
             // Don't need to finish it again since it's finished in super.onCreate .
             return;
-        }
+        }//ant -version  cocos run -p android
         // DO OTHER INITIALIZATION BELOW
         
     }
