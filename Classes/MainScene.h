@@ -21,7 +21,8 @@ public:
 	int brickCount;
 	float brickSpeed;
 	cocos2d::Vec2 brickSize;
-
+	cocos2d::Vec2 clubSize;
+	std::string logs;
 	virtual void update(float);
 
 private:
@@ -30,4 +31,6 @@ private:
 	cocos2d::Sprite* sprite;
 	Club* myClub;
 	std::vector<Brick*> bricks;
+	bool gameover;
+	int score;
 };

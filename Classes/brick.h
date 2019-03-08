@@ -1,16 +1,18 @@
 #pragma once
 #include "base.h"
 class Brick :
-	public base
+	public Base
 {
 public:
-	Brick(cocos2d::Sprite* s, cocos2d::Vec2 xy);
-	~Brick();
-	cocos2d::Vec2 position;
-	float speed;
-	bool acting;
+	virtual bool initWithSpeed(float sp, int _x);
+	CREATE_FUNC(Brick);
 	void act(float delta);
-	void hit(base obj);
-	void setup(cocos2d::Vec2 xy, float sp);
+	void hit(Base obj);
+	static Brick* Brick::create(cocos2d::Sprite* s, cocos2d::Vec2 xy, float sp,int _x);
+
+	int x;
+	float speed;
+	cocos2d::Vec2 position;
+	bool acting;
 };
 

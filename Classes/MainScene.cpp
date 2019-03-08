@@ -16,63 +16,51 @@ bool MainScene::init()
 	brickCount=5;
 	brickSpeed=20;
 	brickSize = Vec2(2, 2);
-	fieldSize = Vec2(10,80);
+	fieldSize = Vec2(10,20);
+	clubSize = Vec2(3,1);
+
+	logs = "empty";
+	gameover = false;
 
 	cellPixelSize = Vec2(Director::getInstance()->getVisibleSize().width / fieldSize.x,
 					Director::getInstance()->getVisibleSize().height / fieldSize.y);
-    sprite = Sprite::create("HelloWorld.png");
 
 	for (int i = 0; i < brickCount; i++)
 	{
 		auto sp = Sprite::create("HelloWorld.png");
 		sp->setScaleX((cellPixelSize.x / sp->getContentSize().width)*brickSize.x);
 		sp->setScaleY(cellPixelSize.y / (sp->getContentSize().height)*brickSize.y);
-		bricks.push_back(new Brick(sp,Vec2(0, 0)));
-		this->addChild(sp, 1);
+		auto brick = Brick::create(sp, 
+			Vec2((random<int>(1, fieldSize.x) * cellPixelSize.x), Director::getInstance()->getVisibleSize().height - (random<float>(1, cellPixelSize.x)))
+			, brickSpeed, random<int>(1, 10));
+		bricks.push_back(brick);
+		this->addChild(brick, 1);
 	}
 
-	for (auto &attack : bricks) // access by reference to avoid copying
-	{
 
-		attack->setup(Vec2((random<int>(1, fieldSize.x) * cellPixelSize.x), Director::getInstance()->getVisibleSize().height - (random<float>(1, cellPixelSize.x))), brickSpeed);
+    sprite = Sprite::create("HelloWorld.png");
 
-	}
+	sprite->setScaleX(cellPixelSize.x/(sprite->getContentSize().width)*clubSize.x);
+	sprite->setScaleY(cellPixelSize.y / (sprite->getContentSize().height)*clubSize.y);
+	sprite->setAnchorPoint(Vec2(0, 1));
+
+	myClub = Club::create(sprite,Vec2(Director::getInstance()->getVisibleSize().width / 2, Director::getInstance()->getVisibleSize().height / 2),
+		10,"5+x=15");
+	
 	auto touchListener = EventListenerTouchOneByOne::create();
 	acting = false;
 	touchListener->onTouchMoved = CC_CALLBACK_2(MainScene::onTouchMoved, this);
 	touchListener->onTouchBegan = CC_CALLBACK_2(MainScene::onTouchBegan, this);
 	touchListener->onTouchEnded = CC_CALLBACK_2(MainScene::onTouchEnded, this);
+	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(touchListener, myClub);
+    this->addChild(myClub, 2);
 
-	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(touchListener, sprite);
+	label = Label::createWithTTF("", "fonts/Marker Felt.ttf", 24);
 
-	myClub = new Club(sprite,Vec2(Director::getInstance()->getVisibleSize().width / 2, Director::getInstance()->getVisibleSize().height / 2));
-	// increases just X scale by 2.0
-	sprite->setScaleX(cellPixelSize.x/(sprite->getContentSize().width));
+	label->setPosition(Vec2(100, 200));
+
+	this->addChild(label, 2);
 	
-	label = Label::createWithTTF("123", "fonts/Marker Felt.ttf", 24);
-	label->setPosition(Vec2(200,100));
-
-	// add the label as a child to this layer
-	this->addChild(label, 1);
-	// increases just Y scale by 2.0
-	sprite->setScaleY(cellPixelSize.y / (sprite->getContentSize().height));
-	sprite->setAnchorPoint(Vec2(0, 1));
-	// Add a "touch" event listener to our sprite
-	/*auto touchListener = EventListenerTouchOneByOne::create();
-	touchListener->onTouchBegan = [](Touch* touch, Event* event) -> bool {
-
-		auto bounds = event->getCurrentTarget()->getBoundingBox();
-
-		if (bounds.containsPoint(touch->getLocation())) {
-			Director::getInstance()->popScene();	
-		}
-		return true;
-	};
-
-	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(touchListener, sprite);
-   */
-    this->addChild(sprite, 2);
-
 	// General Update
 	this->scheduleUpdate();
     
@@ -80,21 +68,29 @@ bool MainScene::init()
 }
 
 void MainScene::update(float dt) {
-	std::stringstream touchDetails;
+	/*std::stringstream touchDetails;
 	touchDetails << "coordinates: " <<
-		bricks[0]->sprite->getPositionX() << "," << bricks[0]->sprite->getPositionY() << std::endl;
-		label->setString(touchDetails.str().c_str());
+		acting << ", " << logs;// bricks[0]->getPositionY() << std::endl;
+		label->setString(touchDetails.str().c_str());*/
 	for (auto &attack : bricks) // access by reference to avoid copying
 	{
 		attack->act(dt);
-		
+		auto bounds = myClub->getChildren().front()->getBoundingBox();
+		bounds.origin += myClub->getPosition();
+		if (bounds.intersectsRect(attack->getBoundingBox()))
+			gameover=!myClub->hit(attack->x);
 	}
+	if (gameover) { logs = "GAME OVER"; 
+	label->setString(logs);
+	}
+
 }
 
 bool MainScene::onTouchBegan(Touch* touch, Event* event)
 {
 	if (!acting) {
-		auto bounds = event->getCurrentTarget()->getBoundingBox();
+		auto bounds = event->getCurrentTarget()->getChildren().front()->getBoundingBox();
+		bounds.origin += event->getCurrentTarget()->getPosition();
 		acting = (bounds.containsPoint(touch->getLocation()));
 	}
 	return true;
@@ -103,7 +99,8 @@ bool MainScene::onTouchBegan(Touch* touch, Event* event)
 void MainScene::onTouchEnded(Touch* touch, Event* event)
 {
 	if (acting) {
-		auto bounds = event->getCurrentTarget()->getBoundingBox();
+		auto bounds = event->getCurrentTarget()->getChildren().front()->getBoundingBox();
+		bounds.origin += event->getCurrentTarget()->getPosition();
 		acting = (bounds.containsPoint(touch->getLocation()));
 	}
 }
@@ -113,7 +110,7 @@ void MainScene::onTouchMoved(Touch* touch, Event* event)
 	if (acting)
 	{
 		float x = floor(touch->getLocation().x / cellPixelSize.x);
-		if (x < 0) x = 0; else if (x > fieldSize.x-1) x = fieldSize.x-1;
+		if (x < 0) x = 0; else if (x > fieldSize.x-clubSize.x) x = fieldSize.x-1;
 		x *= cellPixelSize.x;
 		
 		float y = floor(touch->getLocation().y / cellPixelSize.y);

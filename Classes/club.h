@@ -1,14 +1,18 @@
 #pragma once
 #include "base.h"
 class Club :
-	public base
+	public Base
 {
 public:
-	Club(cocos2d::Sprite* s, cocos2d::Vec2 _xy);
-	~Club();
+	CREATE_FUNC(Club);
 	int score;
+	int answ;
+	std::string problem;
+	virtual bool init();
+	virtual bool initWithTask(int answear, std::string sproblem);
 	bool acting;
 	void act(cocos2d::Vec2 _xy);
-	void hit(base obj);
+	static Club* Club::create(cocos2d::Sprite * s, cocos2d::Vec2 _xy, int answear, std::string sproblem);
+	bool hit(int a);
 };
 

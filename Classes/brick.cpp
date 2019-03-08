@@ -2,40 +2,41 @@
 
 USING_NS_CC;
 
-
-Brick::Brick(Sprite* s, Vec2 xy):base(s, xy)
-{
-
-	// Add a "touch" event listener to our sprite
-	
-}
-
-
-Brick::~Brick()
-{
-}
-
 void Brick::act(float delta)
 {
-	position.y -= speed*delta;
+	this->setPositionY(this->getPositionY()-this->speed*delta);
 /*
 	std::stringstream touchDetails; 
 	touchDetails << "Touched at OpenGL coordinates: " <<
 		_xy.x << "," << _xy.y << std::endl;
 	MessageBox(touchDetails.str().c_str(), "Touched");*/
-	sprite->setPosition(position);
+	//this->setPosition(position);
 	
 }
 
+bool Brick::initWithSpeed(float sp, int _x )
+{
+	auto label = Label::createWithTTF(std::to_string(_x), "fonts/Marker Felt.ttf", 24);
+	label->setPosition(Vec2(0,0));
+	this->x = _x;
+	this->addChild(label, 1);
+	this->speed = sp;
+	return true;
+}
 
-void Brick::hit(base obj)
+void Brick::hit(Base obj)
 {
 }
 
-void Brick::setup(Vec2 xy, float sp)
+Brick* Brick::create(cocos2d::Sprite* s, cocos2d::Vec2 xy, float sp, int _x)
+	
 {
-	speed = sp;
-	sprite->setPosition(xy);
-
-	position = xy;
+	Brick *base = new (std::nothrow) Brick();
+	if (base && base->initWithSprite(s, xy) && base->initWithSpeed(sp, _x))
+	{
+		base->autorelease();
+		return base;
+	}
+	CC_SAFE_DELETE(base);
+	return nullptr;
 }
