@@ -25,6 +25,9 @@
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
 #include "MainScene.h"
+#include <ui/UITextField.h>
+#include <ui/UIButton.h>
+#include <ui/cocosGUI.h>
 
 USING_NS_CC;
 
@@ -40,6 +43,8 @@ static void problemLoading(const char* filename)
     printf("Depending on how you compiled you might have to add 'Resources/' in front of filenames in HelloWorldScene.cpp\n");
 }
 
+
+
 // on "init" you need to initialize your instance
 bool HelloWorld::init()
 {
@@ -53,6 +58,12 @@ bool HelloWorld::init()
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
+	Vec2 startPosTextFields = Vec2(origin.x + visibleSize.width / 2, 100);
+	brickSize = Vec2(2, 2);
+	fieldSize = Vec2(10, 20);
+	clubSize = Vec2(3, 1);
+
+	int fieldsDefault[6] = { fieldSize.x,fieldSize.y,clubSize.x,clubSize.y, brickSize.x,brickSize.y };
     /////////////////////////////
     // 2. add a menu item with "X" image, which is clicked to quit the program
     //    you may modify it.
@@ -62,10 +73,7 @@ bool HelloWorld::init()
                                            "CloseNormal.png",
                                            "CloseSelected.png",
                                            CC_CALLBACK_1(HelloWorld::menuCloseCallback, this));
-	auto newGameItem = MenuItemImage::create(
-		"HelloWorld.png",
-		"HelloWorld.png",
-		CC_CALLBACK_1(HelloWorld::newGameCallback, this));
+	
 
     if (closeItem == nullptr ||
         closeItem->getContentSize().width <= 0 ||
@@ -80,12 +88,53 @@ bool HelloWorld::init()
         closeItem->setPosition(Vec2(x,y));
     }
 
-	newGameItem->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
-
     // create menu, it's an autorelease object
-    auto menu = Menu::create(closeItem, newGameItem, NULL);
+    auto menu = Menu::create(closeItem, NULL);
     menu->setPosition(Vec2::ZERO);
     this->addChild(menu, 1);
+	
+	// менять размер поля, платформы, размера и количества блоков, скорости игры 
+	//а также задавать в файле математические выражения для каждого раунда с указанием количества выпадающих блоков и чисел на них.
+
+	for (int i = 0; i < 6; i++)
+	{
+		auto label = Label::createWithSystemFont(nameOfFields[i], "Arial", 24);
+		label->setPosition(Vec2(startPosTextFields.x, startPosTextFields.y + i * 30));		
+		this->addChild(label);
+	}
+	FieldW = ui::TextField::create(std::to_string(fieldsDefault[0]), "Arial", 24);
+	FieldW->setString(std::to_string(fieldsDefault[0]));
+	FieldW->setPosition(Vec2(startPosTextFields.x + 100, startPosTextFields.y + 0 * 30));
+	this->addChild(FieldW);
+	FieldH = ui::TextField::create(std::to_string(fieldsDefault[1]), "Arial", 24);
+	FieldH->setString(std::to_string(fieldsDefault[1]));
+	FieldH->setPosition(Vec2(startPosTextFields.x + 100, startPosTextFields.y + 1 * 30));
+	this->addChild(FieldH);
+	PlatformW = ui::TextField::create(std::to_string(fieldsDefault[2]), "Arial", 24);
+	PlatformW->setString(std::to_string(fieldsDefault[2]));
+	PlatformW->setPosition(Vec2(startPosTextFields.x + 100, startPosTextFields.y + 2 * 30));
+	this->addChild(PlatformW);
+	PlatformH = ui::TextField::create(std::to_string(fieldsDefault[3]), "Arial", 24);
+	PlatformH->setString(std::to_string(fieldsDefault[3]));
+	PlatformH->setPosition(Vec2(startPosTextFields.x + 100, startPosTextFields.y + 3 * 30));
+	this->addChild(PlatformH);
+	BlockW = ui::TextField::create(std::to_string(fieldsDefault[4]), "Arial", 24);
+	BlockW->setString(std::to_string(fieldsDefault[4]));
+	BlockW->setPosition(Vec2(startPosTextFields.x + 100, startPosTextFields.y + 4 * 30));
+	this->addChild(BlockW);
+	BlockH = ui::TextField::create(std::to_string(fieldsDefault[5]), "Arial", 24);
+	BlockH->setString(std::to_string(fieldsDefault[5]));
+	BlockH->setPosition(Vec2(startPosTextFields.x + 100, startPosTextFields.y + 5 * 30));
+	this->addChild(BlockH);
+
+
+	auto button = ui::Button::create("button.png", "button.png", "button.png");
+
+	button->setTitleText("Apply and start");
+	button->setTitleFontSize(24);
+	button->addTouchEventListener(CC_CALLBACK_2(HelloWorld::newGameCallback, this)); // obviously use your own callback and scene here.
+	button->setPosition(Vec2(startPosTextFields.x, startPosTextFields.y+30*8));
+	this->addChild(button);
 
     /////////////////////////////
     // 3. add your codes below...
@@ -139,9 +188,26 @@ void HelloWorld::menuCloseCallback(Ref* pSender)
 
 }
 
-void HelloWorld::newGameCallback(Ref* pSender)
+void HelloWorld::newGameCallback(Ref* pSender, cocos2d::ui::Widget::TouchEventType type)
 {
-	auto myScene = MainScene::create();
+
+	//std::string  nameOfFields[6] = { "FieldW", "FieldH", "PlatformW", "PlatformH", "BlockW", "BlockH" }; 
+	try {
+		// protected code
+	brickSize.x = std::stoi(BlockW->getString());
+	brickSize.y = std::stoi(BlockH->getString());
+	fieldSize.x = std::stoi(FieldW->getString());
+	fieldSize.y = std::stoi(FieldH->getString());
+	clubSize.x = std::stoi(PlatformW->getString());
+	clubSize.y = std::stoi(PlatformH->getString());
+	}
+	catch (std::invalid_argument e1) {
+		// catch block
+		MessageBox("Invalid input!", "Warning");
+		return;
+	}
+	
+	auto myScene = MainScene::create(brickSize, fieldSize, clubSize);
 	//Close the cocos2d-x game scene and quit the application
 	Director::getInstance()->pushScene(myScene);
 

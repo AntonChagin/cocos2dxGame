@@ -15,9 +15,7 @@ bool MainScene::init()
     }
 	brickCount=5;
 	brickSpeed=20;
-	brickSize = Vec2(2, 2);
-	fieldSize = Vec2(10,20);
-	clubSize = Vec2(3,1);
+	
 
 	logs = "empty";
 	gameover = false;
@@ -38,13 +36,13 @@ bool MainScene::init()
 	}
 
 
-    sprite = Sprite::create("HelloWorld.png");
+    sprite = Sprite::create("Club.png");
 
 	sprite->setScaleX(cellPixelSize.x/(sprite->getContentSize().width)*clubSize.x);
 	sprite->setScaleY(cellPixelSize.y / (sprite->getContentSize().height)*clubSize.y);
 	sprite->setAnchorPoint(Vec2(0, 1));
 
-	myClub = Club::create(sprite,Vec2(Director::getInstance()->getVisibleSize().width / 2, Director::getInstance()->getVisibleSize().height / 2),
+	myClub = Club::create(sprite,Vec2(Director::getInstance()->getVisibleSize().width / 2, sprite->getContentSize().height),
 		10,"5+x=15");
 	
 	auto touchListener = EventListenerTouchOneByOne::create();
@@ -67,18 +65,30 @@ bool MainScene::init()
     return true;
 }
 
+bool MainScene::initWithParams(cocos2d::Vec2 _brickSize, cocos2d::Vec2 _fieldSize, cocos2d::Vec2 _clubSize)
+{
+	brickSize = _brickSize;
+	fieldSize = _fieldSize;
+	clubSize = _clubSize;
+
+
+	return true;
+}
+
 void MainScene::update(float dt) {
 	/*std::stringstream touchDetails;
 	touchDetails << "coordinates: " <<
 		acting << ", " << logs;// bricks[0]->getPositionY() << std::endl;
 		label->setString(touchDetails.str().c_str());*/
-	for (auto &attack : bricks) // access by reference to avoid copying
+	for (auto &brick : bricks) // access by reference to avoid copying
 	{
-		attack->act(dt);
+		brick->act(dt);
 		auto bounds = myClub->getChildren().front()->getBoundingBox();
 		bounds.origin += myClub->getPosition();
-		if (bounds.intersectsRect(attack->getBoundingBox()))
-			gameover=!myClub->hit(attack->x);
+		auto brickBounds = brick->getChildren().front()->getBoundingBox();
+		brickBounds.origin += brick->getPosition();
+		if (bounds.intersectsRect(brickBounds))
+			gameover=!myClub->hit(brick->x);
 	}
 	if (gameover) { logs = "GAME OVER"; 
 	label->setString(logs);
@@ -110,7 +120,7 @@ void MainScene::onTouchMoved(Touch* touch, Event* event)
 	if (acting)
 	{
 		float x = floor(touch->getLocation().x / cellPixelSize.x);
-		if (x < 0) x = 0; else if (x > fieldSize.x-clubSize.x) x = fieldSize.x-1;
+		if (x < 0) x = 0; else if (x > fieldSize.x-clubSize.x) x = fieldSize.x- clubSize.x;
 		x *= cellPixelSize.x;
 		
 		float y = floor(touch->getLocation().y / cellPixelSize.y);
@@ -121,4 +131,19 @@ void MainScene::onTouchMoved(Touch* touch, Event* event)
 		
 		myClub->act(Vec2(x,y));
 	}
+}
+
+
+
+MainScene * MainScene::create(cocos2d::Vec2 _brickSize, cocos2d::Vec2 _fieldSize, cocos2d::Vec2 _clubSize)
+{
+
+	MainScene *base = new (std::nothrow) MainScene();
+	if (base && base->initWithParams(_brickSize, _fieldSize, _clubSize) && base->init())
+	{
+		base->autorelease();
+		return base;
+	}
+	CC_SAFE_DELETE(base);
+	return nullptr;
 }

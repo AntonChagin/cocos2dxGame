@@ -26,6 +26,7 @@
 #define __HELLOWORLD_SCENE_H__
 
 #include "cocos2d.h"
+#include <ui/cocosGUI.h>
 
 class HelloWorld : public cocos2d::Scene
 {
@@ -36,10 +37,23 @@ public:
     
     // a selector callback
     void menuCloseCallback(cocos2d::Ref* pSender);
-	void newGameCallback(cocos2d::Ref* pSender);
+	void HelloWorld::newGameCallback(Ref* pSender, cocos2d::ui::Widget::TouchEventType type);
     
     // implement the "static create()" method manually
     CREATE_FUNC(HelloWorld);
+
+private:
+	cocos2d::Vec2 brickSize;
+	cocos2d::Vec2 fieldSize;
+	cocos2d::Vec2 clubSize;
+	cocos2d::ui::TextField* FieldW;
+	cocos2d::ui::TextField* FieldH;
+	cocos2d::ui::TextField* PlatformW;
+	cocos2d::ui::TextField* PlatformH;
+	cocos2d::ui::TextField* BlockW;
+	cocos2d::ui::TextField* BlockH;
+
+	std::string  nameOfFields[6] = { "FieldW", "FieldH", "PlatformW", "PlatformH", "BlockW", "BlockH" };
 };
 
 #endif // __HELLOWORLD_SCENE_H__
