@@ -22,8 +22,6 @@ Base* Base::create(cocos2d::Sprite * s, cocos2d::Vec2 _xy)
 	return nullptr;
 }
 
-
-
 bool Base::initWithSprite(cocos2d::Sprite * s, cocos2d::Vec2 _xy = cocos2d::Vec2(0,0))
 {
 	if (Base::init())

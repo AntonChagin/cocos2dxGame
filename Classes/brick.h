@@ -4,15 +4,21 @@ class Brick :
 	public Base
 {
 public:
-	virtual bool initWithSpeed(float sp, int _x);
+	virtual bool initWithSpeed(float sp, float _x);
 	CREATE_FUNC(Brick);
+	/** Move brick 
+	* @param delta for time passed
+	*/
 	void act(float delta);
-	void hit(Base obj);
-	static Brick* Brick::create(cocos2d::Sprite* s, cocos2d::Vec2 xy, float sp,int _x);
+	/** Move brick
+	* @param sp speed in pixels/second
+	* @param _x answer
+	*/
+	static Brick* Brick::create(cocos2d::Sprite* s, cocos2d::Vec2 xy, float sp, float _x);
 
-	int x;
+	/** answer of this brick*/
+	float x;
+	/** speed in pixels/second*/
 	float speed;
-	cocos2d::Vec2 position;
-	bool acting;
 };
 

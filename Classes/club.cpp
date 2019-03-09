@@ -4,44 +4,37 @@ USING_NS_CC;
 
 bool Club::init()
 {
-	if (!Base::init())
-	{
+	if (!Base::init())	
 		return false;
-	}
-
-
-	auto label = Label::createWithTTF(problem, "fonts/Marker Felt.ttf", 24);
 	
+	auto label = Label::createWithTTF(problem, "fonts/arial.ttf", 24);
 	label->setPosition(Vec2(this->getChildren().front()->getBoundingBox().size.width / 2, -24));
-
 	this->addChild(label, 2);
+
 	return true;
 }
 
-bool Club::initWithTask(int answear, std::string sproblem)
+bool Club::initWithTask(float answear, std::string sproblem, float step)
 {
 	this->answ = answear;
 	this->problem = sproblem;
-	if (!Club::init())
-	{
+	this->step = step;
+
+	if (!Club::init())	
 		return false;
-	}
+
 	return true;
 }
 
 void Club::act(Vec2 _xy)
-{/*
-	std::stringstream touchDetails; 
-	touchDetails << "Touched at OpenGL coordinates: " <<
-		_xy.x << "," << _xy.y << std::endl;
-	MessageBox(touchDetails.str().c_str(), "Touched");*/
+{
 	this->setPosition(_xy);
 }
 
-Club* Club::create(cocos2d::Sprite * s, cocos2d::Vec2 _xy, int answear, std::string sproblem)
+Club* Club::create(cocos2d::Sprite * s, cocos2d::Vec2 _xy, int answear, std::string sproblem, float step)
 {
 	Club *base = new (std::nothrow) Club();
-	if (base && base->initWithSprite(s, _xy) && base->initWithTask(answear, sproblem))
+	if (base && base->initWithSprite(s, _xy) && base->initWithTask(answear, sproblem, step))
 	{
 		base->autorelease();
 		return base;
@@ -51,9 +44,9 @@ Club* Club::create(cocos2d::Sprite * s, cocos2d::Vec2 _xy, int answear, std::str
 }
 
 
-bool Club::hit(int a)
+bool Club::hit(float a)
 {
-	if (a == this->answ)
+	if (abs(a - this->answ) < 0.001)
 		return true;
 	return false;
 }
