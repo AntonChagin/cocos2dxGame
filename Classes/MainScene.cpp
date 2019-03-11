@@ -180,6 +180,8 @@ void MainScene::setup()
 void MainScene::menuCloseCallback(Ref* pSender)
 {
 	// If user launch main menu scene after gameover, it will be paused
+
+	bricks.clear();
 	if (Director::getInstance()->isPaused())
 		Director::getInstance()->resume();
 	Director::getInstance()->popToSceneStackLevel(1);
