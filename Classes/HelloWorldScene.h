@@ -16,9 +16,11 @@ public:
     CREATE_FUNC(HelloWorld);
 
 private:
-	//Vectors to keep dimensions of playfield, platform and blocks
+	//Vectors to keep dimensions of blocks
 	cocos2d::Vec2 brickSize;
+	//Vectors to keep dimensions of playfield
 	cocos2d::Vec2 fieldSize;
+	//Vectors to keep dimensions of platform
 	cocos2d::Vec2 clubSize;
 
 	//TextFields for input dimensions of playfield, platform and blocks

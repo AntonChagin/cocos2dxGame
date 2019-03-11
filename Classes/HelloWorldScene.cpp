@@ -37,7 +37,7 @@ bool HelloWorld::init()
 	brickSize = Vec2(2, 2);
 	fieldSize = Vec2(10, 20);
 	clubSize = Vec2(3, 1);
-	int fieldsDefault[6] = { fieldSize.x,fieldSize.y,clubSize.x,clubSize.y, brickSize.x,brickSize.y };
+	float fieldsDefault[6] = { fieldSize.x,fieldSize.y,clubSize.x,clubSize.y, brickSize.x,brickSize.y };
 
     // add a "close" icon to exit the progress. it's an autorelease object
     auto closeItem = MenuItemImage::create(

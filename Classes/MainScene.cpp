@@ -31,14 +31,33 @@ bool MainScene::initWithParams(cocos2d::Vec2 _brickSize, cocos2d::Vec2 _fieldSiz
 	return true;
 }
 
+bool intersect(Rect r1,Rect r2) {
+	if (r1.intersectsRect(r2)) 
+		// if rect1 right side touching rect2 left side, or vice versa
+		if ((abs(r1.origin.x + r1.size.width - r2.origin.x) < 0.1) || (abs(r2.origin.x + r2.size.width - r1.origin.x) < 0.1))
+			return false;
+		else return true;
+	
+	return false;
+}
+
 void MainScene::update(float dt) {
 
-	int under = bricks.size();
 	for (auto &brick : bricks) 
 	{
 		brick->act(dt);
-		// counting bricks under "ground" level
-		if (brick->getPositionY() < - (brick->getChildren().front()->getBoundingBox().getMidY())) under--;
+		// if brick is under "ground" level restart him
+		if (brick->getPositionY() < -(brick->getChildren().front()->getBoundingBox().getMidY()))
+		{
+			brick->dead = true;
+		// if brick width is odd, we need to push it left by half of cell size
+			float odd = (int(round(brickSize.x)) % 2 == 0) ? 0 : (cellPixelSize.x / 2);
+			// how much space is needed for platgorm to go under a brick in time
+			float gap = cellPixelSize.y * (clubSize.x + brickSize.x) * brickSpeed / cellPixelSize.x + brickSize.y*cellPixelSize.y;
+			brick->setup(Vec2((random<int>(brickSize.x, fieldSize.x - brickSize.x) * cellPixelSize.x - odd),
+				Director::getInstance()->getVisibleSize().height + (gap))
+				, brickSpeed, blocksX[currentLvl][random<int>(0, blocksX[currentLvl].size() - 1)]);
+		}
 
 		auto bounds = myClub->getChildren().front()->getBoundingBox();
 		bounds.origin += myClub->getPosition();
@@ -46,24 +65,30 @@ void MainScene::update(float dt) {
 		auto brickBounds = brick->getChildren().front()->getBoundingBox();
 		brickBounds.origin += brick->getPosition();
 
-		if (bounds.intersectsRect(brickBounds))
+		if (intersect(brickBounds,bounds))
 			// if answer is wrong
 			if (!myClub->hit(brick->x))
+			{
 				gameover = true;
+				currentLvl = 0;
+				label->setString("GAME OVER! Your score: " + std::to_string(score));
+				Director::getInstance()->pause();
+			}
 			else {
+				// if answer was right
 				this->score += points[currentLvl];
 				currentLvl++;
+				if (currentLvl >= levelsNumber) {
+					label->setString("WIN! Your score: " + std::to_string(score));
+					Director::getInstance()->pause();
+					return;
+				}
+
 				Director::getInstance()->pause();
 				this->setup();
 				Director::getInstance()->resume();
 				return;
 			}
-	}
-
-	if (gameover || under < 1) { 
-	currentLvl = 0;
-	label->setString("GAME OVER");
-	Director::getInstance()->pause();
 	}
 }
 
@@ -71,29 +96,32 @@ void MainScene::update(float dt) {
 void MainScene::setup()
 {
 	if (currentLvl > 0) {
-		this->removeAllChildren();
-		for (auto &brick : bricks) 		
-			brick->release();		
 		bricks.clear();
+		this->removeAllChildren();
 	}
 	else score = 0;
-	
+
 	gameover = false;
 	brickCount = numberofblocks[currentLvl];
 	brickSpeed = speeds[currentLvl];
 
 	cellPixelSize = Vec2(Director::getInstance()->getVisibleSize().width / fieldSize.x,
 		Director::getInstance()->getVisibleSize().height / fieldSize.y);
-	
+
+	float gap = cellPixelSize.y * (clubSize.x + brickSize.x) * brickSpeed / cellPixelSize.x + brickSize.y*cellPixelSize.y;
+	int onScreenBricks = round(Director::getInstance()->getVisibleSize().height / gap) + 1;
 	// spawn bricks
-	for (int i = 0; i < brickCount; i++)
+	for (int i = 0; i < onScreenBricks; i++)
 	{
 		auto sp = Sprite::create("HelloWorld.png");
 		sp->setScaleX((cellPixelSize.x / sp->getContentSize().width)*brickSize.x);
 		sp->setScaleY(cellPixelSize.y / (sp->getContentSize().height)*brickSize.y);
+		// if brick width is odd, we need to push it left by half of cell size
+		float odd = (int(round(brickSize.x)) % 2 == 0) ? 0 : (cellPixelSize.x / 2);
 		auto brick = Brick::create(sp,
-			Vec2((random<int>(1, fieldSize.x-brickSize.x) * cellPixelSize.x), Director::getInstance()->getVisibleSize().height + ( cellPixelSize.y * brickSize.y * i ))
-			, brickSpeed, blocksX[currentLvl][i]);
+			Vec2((random<int>(brickSize.x, fieldSize.x - brickSize.x) * cellPixelSize.x - odd),
+				Director::getInstance()->getVisibleSize().height + (gap*i))
+			, brickSpeed, blocksX[currentLvl][random<int>(0, blocksX[currentLvl].size() - 1)]);
 		bricks.push_back(brick);
 		this->addChild(brick, 1);
 	}
@@ -110,9 +138,7 @@ void MainScene::setup()
 	this->addChild(myClub, 2);
 
 	// setup touch listeners
-	touchListener->onTouchMoved = CC_CALLBACK_2(MainScene::onTouchMoved, this);
 	touchListener->onTouchBegan = CC_CALLBACK_2(MainScene::onTouchBegan, this);
-	touchListener->onTouchEnded = CC_CALLBACK_2(MainScene::onTouchEnded, this);
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(touchListener, myClub);
 
 	// setup keyboard listeners
@@ -121,7 +147,7 @@ void MainScene::setup()
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(keyboardListener, myClub);
 
 	// setup label with score
-	label = Label::createWithTTF("Points:"+std::to_string(score), "fonts/Marker Felt.ttf", 24);
+	label = Label::createWithTTF("Points:" + std::to_string(score), "fonts/Marker Felt.ttf", 24);
 	label->setPosition(Vec2(Director::getInstance()->getVisibleSize().width / 2, Director::getInstance()->getVisibleSize().height - label->getContentSize().height));
 	this->addChild(label, 2);
 
@@ -132,9 +158,9 @@ void MainScene::setup()
 		CC_CALLBACK_1(MainScene::menuCloseCallback, this));
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 	auto visibleSize = Director::getInstance()->getVisibleSize();
-		float x = origin.x + visibleSize.width - closeItem->getContentSize().width / 2;
-		float y = visibleSize.height - closeItem->getContentSize().height / 2;
-		closeItem->setPosition(Vec2(x, y));
+	float x = origin.x + visibleSize.width - closeItem->getContentSize().width / 2;
+	float y = visibleSize.height - closeItem->getContentSize().height / 2;
+	closeItem->setPosition(Vec2(x, y));
 	auto menu = Menu::create(closeItem, NULL);
 	menu->setPosition(Vec2::ZERO);
 	this->addChild(menu, 1);
@@ -143,8 +169,11 @@ void MainScene::setup()
 	if (Director::getInstance()->isPaused())
 		Director::getInstance()->resume();
 
-	// General Update
-	this->scheduleUpdate();
+	if (currentLvl == 0) {
+
+		// General Update
+		this->scheduleUpdate();
+	}
 
 }
 
@@ -158,41 +187,18 @@ void MainScene::menuCloseCallback(Ref* pSender)
 
 bool MainScene::onTouchBegan(Touch* touch, Event* event)
 {
-	if (!acting) {
-		auto bounds = event->getCurrentTarget()->getChildren().front()->getBoundingBox();
-		bounds.origin += event->getCurrentTarget()->getPosition();
-		acting = (bounds.containsPoint(touch->getLocation()));
-	}
+	float step = 0;
+	Vec2 loc = event->getCurrentTarget()->getPosition();
+	if (touch->getLocation().x>Director::getInstance()->getVisibleSize().width / 2)
+		step = myClub->step;
+	else
+		step = -myClub->step;
+
+	int x = round((loc.x + step) / cellPixelSize.x);
+	if (x < 0) step = 0; else if (x > fieldSize.x - clubSize.x) step = 0;
+	auto moveBy = MoveBy::create(0.5, Vec2(step, 0));
+	event->getCurrentTarget()->runAction(moveBy);
 	return true;
-}
-
-void MainScene::onTouchEnded(Touch* touch, Event* event)
-{
-	if (acting) {
-		auto bounds = event->getCurrentTarget()->getChildren().front()->getBoundingBox();
-		bounds.origin += event->getCurrentTarget()->getPosition();
-		acting = (bounds.containsPoint(touch->getLocation()));
-	}
-}
-
-void MainScene::onTouchMoved(Touch* touch, Event* event)
-{
-	// This code makes platform stick to bottom of the windows and to move by grid
-	if (acting)
-	{
-		float x = floor(touch->getLocation().x / cellPixelSize.x);
-		if (x < 0) x = 0; else if (x > fieldSize.x-clubSize.x) x = fieldSize.x- clubSize.x;
-		x *= cellPixelSize.x;
-
-		float y = floor(touch->getLocation().y / cellPixelSize.y);
-		/*
-		This can be used for vertical mobility of platform
-		y++;
-		if (y < 1) y = 1; else if (y > fieldSize.y) y = fieldSize.y;
-		y *= cellPixelSize;*/
-		y = cellPixelSize.y;		
-		myClub->act(Vec2(x,y));
-	}
 }
 
 void MainScene::keyPressed(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event *event)
@@ -209,11 +215,11 @@ void MainScene::keyPressed(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Eve
 		step = myClub->step;
 		break;
 	}
-	// This code makes platform to move by grid
-	float x = floor((loc.x + step) / cellPixelSize.x);
-	if (x < 0) x = 0; else if (x > fieldSize.x - clubSize.x) x = fieldSize.x - clubSize.x;
-	x *= cellPixelSize.x;
-		event->getCurrentTarget()->setPosition(x, loc.y);
+
+	int x = round((loc.x + step) / cellPixelSize.x);
+	if (x < 0) step = 0; else if (x > fieldSize.x - clubSize.x) step=0;	
+	auto moveBy = MoveBy::create(0.5, Vec2(step, 0));
+	event->getCurrentTarget()->runAction(moveBy);
 }
 
 MainScene * MainScene::create(cocos2d::Vec2 _brickSize, cocos2d::Vec2 _fieldSize, cocos2d::Vec2 _clubSize)
