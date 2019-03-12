@@ -43,6 +43,16 @@ bool intersect(Rect r1,Rect r2) {
 
 void MainScene::update(float dt) {
 
+	if (myClub->getPositionX() < 0)
+	{
+		myClub->stopAllActions();
+		myClub->setPositionX(0);
+	}else if(myClub->getPositionX() > (fieldSize.x-clubSize.x)*cellPixelSize.x)
+	{
+		myClub->stopAllActions();
+		myClub->setPositionX((fieldSize.x - clubSize.x)*cellPixelSize.x);
+	}
+
 	for (auto &brick : bricks) 
 	{
 		brick->act(dt);
@@ -189,15 +199,18 @@ void MainScene::menuCloseCallback(Ref* pSender)
 
 bool MainScene::onTouchBegan(Touch* touch, Event* event)
 {
-	float step = 0;
-	Vec2 loc = event->getCurrentTarget()->getPosition();
-	if (touch->getLocation().x>Director::getInstance()->getVisibleSize().width / 2)
-		step = myClub->step;
+	int direction = 0;
+	int x = round(event->getCurrentTarget()->getPositionX() / cellPixelSize.x);
+	if (touch->getLocation().x > Director::getInstance()->getVisibleSize().width / 2)
+		direction = 1;
 	else
-		step = -myClub->step;
+		direction = -1;
 
-	int x = round((loc.x + step) / cellPixelSize.x);
-	if (x < 0) step = 0; else if (x > fieldSize.x - clubSize.x) step = 0;
+	int goToX = x + direction;
+	if (goToX < 0 && direction < 0) goToX = 0;
+	if (goToX > fieldSize.x - clubSize.x && direction > 0) goToX = fieldSize.x - clubSize.x;
+
+	float step = goToX * cellPixelSize.x - event->getCurrentTarget()->getPositionX();
 	auto moveBy = MoveBy::create(0.5, Vec2(step, 0));
 	event->getCurrentTarget()->runAction(moveBy);
 	return true;
@@ -205,21 +218,24 @@ bool MainScene::onTouchBegan(Touch* touch, Event* event)
 
 void MainScene::keyPressed(cocos2d::EventKeyboard::KeyCode keyCode, cocos2d::Event *event)
 {	
-	float step = 0;
-	Vec2 loc = event->getCurrentTarget()->getPosition();
+	int direction = 0;
+	int x = round(event->getCurrentTarget()->getPositionX() / cellPixelSize.x);
 	switch (keyCode) {
 	case EventKeyboard::KeyCode::KEY_LEFT_ARROW:
 	case EventKeyboard::KeyCode::KEY_A:
-		step = -myClub->step;
+		direction = -1;
 		break;
 	case EventKeyboard::KeyCode::KEY_RIGHT_ARROW:
 	case EventKeyboard::KeyCode::KEY_D:
-		step = myClub->step;
+		direction = 1;
 		break;
 	}
+	
+	int goToX = x + direction;
+	if (goToX < 0 && direction < 0) goToX = 0;
+	if (goToX > fieldSize.x - clubSize.x && direction > 0) goToX = fieldSize.x - clubSize.x;
 
-	int x = round((loc.x + step) / cellPixelSize.x);
-	if (x < 0) step = 0; else if (x > fieldSize.x - clubSize.x) step=0;	
+	float step = goToX * cellPixelSize.x - event->getCurrentTarget()->getPositionX();
 	auto moveBy = MoveBy::create(0.5, Vec2(step, 0));
 	event->getCurrentTarget()->runAction(moveBy);
 }

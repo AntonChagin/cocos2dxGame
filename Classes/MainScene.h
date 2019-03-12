@@ -58,7 +58,6 @@ private:
 
 	/** Label with score 	*/
 	cocos2d::Label* label;
-
 	/** Platform 	*/
 	Club* myClub;
 	std::vector<Brick*> bricks;
